@@ -198,7 +198,7 @@ def save_to_excel(prva_smjena_orders, druga_smjena_orders, ukupno_prva_smjena, u
     wb.save(filename)
 
     print(f"\nExcel izvještaj spremljen: {filename} ✅")
-    subprocess.Popen(["libreoffice", "--calc", filename])
+    subprocess.Popen(["open", filename])
 
 def main():
     driver = init_driver()
@@ -207,12 +207,12 @@ def main():
 
         use_test_date = input("Da li želiš koristiti testni datum? (y/n): ").strip().lower()
         if use_test_date == "y":
-            from_date = "04/25/2025"
-            to_date = "04/25/2025"
+            from_date = "29/04/2025"
+            to_date = "29/04/2025"
             print(f"Koristi se testni datum: {from_date} do {to_date}")
         else:
-            from_date = input("Unesi OD datum (u formatu MM/DD/YYYY) ili Enter za danas: ").strip() or datetime.date.today().strftime("%m/%d/%Y")
-            to_date = input("Unesi DO datum (u formatu MM/DD/YYYY) ili Enter za danas: ").strip() or datetime.date.today().strftime("%m/%d/%Y")
+            from_date = input("Unesi OD datum (u formatu DD/MM/YYYY) ili Enter za danas: ").strip() or datetime.date.today().strftime("%m/%d/%Y")
+            to_date = input("Unesi DO datum (u formatu DD/MM/YYYY) ili Enter za danas: ").strip() or datetime.date.today().strftime("%m/%d/%Y")
 
         apply_filters(driver, from_date, to_date)
         prva_smjena_orders, druga_smjena_orders, ukupno_prva_smjena, ukupno_druga_smjena, ukupno_stavke = scrape_orders(driver)
