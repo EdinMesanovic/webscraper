@@ -5,77 +5,60 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+env:
+  APP_NAME: KorpaScraper   # ⇦ promijeni ovdje i svugdje će važiti
+
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build-macos-arm64:
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v3
-
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      # VARIJANTA A — single binarka (CLI)
+      - name: Build (onefile)
+        run: pyinstaller --onefile --name "$APP_NAME" scraper.py
+
+      - name: Zip binary as KorpaScraper.zip
+        run: |
+          cd dist
+          # fajl je dist/KorpaScraper  → zapakuj ga u KorpaScraper.zip
+          zip -r "${APP_NAME}.zip" "${APP_NAME}"
+
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-macos-arm64
+          path: dist/${{ env.APP_NAME }}.zip
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
-
-      - name: Build EXE with PyInstaller
-        run: pyinstaller --onefile --name scraper-windows scraper.py
-
-      - name: Upload EXE
-        uses: actions/upload-artifact@v4
-        with:
-          name: scraper-windows
-          path: dist/scraper-windows.exe
-
-  # macOS arm64 (Apple Silicon: macOS 14 runner)
-  build-macos-arm64:
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
+      - name: Build (EXE)
+        run: pyinstaller --onefile --name "%APP_NAME%" scraper.py
+      - name: Zip EXE as KorpaScraper.zip
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
-
-      - name: Build macOS (arm64)
-        run: pyinstaller --onefile --name scraper-macos-arm64 scraper.py
-
-      - name: Upload macOS (arm64)
+          cd dist
+          powershell Compress-Archive -Path "${env:APP_NAME}.exe" -DestinationPath "${env:APP_NAME}.zip"
+      - name: Upload ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: scraper-macos-arm64
-          path: dist/scraper-macos-arm64
-
-  # macOS x86_64 (Intel: macOS 13 runner)
-  build-macos-x86_64:
-    runs-on: macos-13
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
-
-      - name: Build macOS (x86_64)
-        run: pyinstaller --onefile --name scraper-macos-x64 scraper.py
-
-      - name: Upload macOS (x86_64)
-        uses: actions/upload-artifact@v4
-        with:
-          name: scraper-macos-x64
-          path: dist/scraper-macos-x64
+          name: ${{ env.APP_NAME }}-windows
+          path: dist/${{ env.APP_NAME }}.zip
