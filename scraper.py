@@ -7,6 +7,7 @@ from openpyxl import Workbook
 import time
 import datetime
 import subprocess
+from openpyxl.utils import get_column_letter
 
 # --- Konstante ---
 EMAIL = "smashburgertz@korpa.ba"
@@ -195,6 +196,19 @@ def save_to_excel(prva_smjena_orders, druga_smjena_orders, ukupno_prva_smjena, u
         ws.append([naziv, podaci["Kolicina"], round(podaci["Cijena"], 2)])
 
     filename = f"narudzbe_{datetime.date.today()}.xlsx"
+
+    for col_index, column_cells in enumerate(ws.columns, start=1):
+        max_length = 0
+        column = get_column_letter(col_index)
+        for cell in column_cells:
+            try:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
+    
     wb.save(filename)
 
     print(f"\nExcel izvještaj spremljen: {filename} ✅")
