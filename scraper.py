@@ -8,26 +8,16 @@ import time
 import datetime
 import subprocess
 from openpyxl.utils import get_column_letter
+from dotenv import load_dotenv
+import os
 
 # --- Konstante ---
-EMAIL = "smashburgertz@korpa.ba"
-PASSWORD = "Mb96z6"
-
 # --- Funkcije ---
 
 def init_driver():
     driver = webdriver.Chrome()
     driver.maximize_window()
     return driver
-
-def login(driver):
-    driver.get("https://korpa.ba/admin")
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "email")))
-    email_input = driver.find_element(By.NAME, "email")
-    password_input = driver.find_element(By.NAME, "password")
-    email_input.send_keys(EMAIL)
-    password_input.send_keys(PASSWORD)
-    driver.find_element(By.XPATH, '//button[@type="submit"]').click()
 
 def apply_filters(driver, from_date, to_date):
     WebDriverWait(driver, 10).until(EC.url_contains("/admin/dashboard"))
@@ -215,9 +205,21 @@ def save_to_excel(prva_smjena_orders, druga_smjena_orders, ukupno_prva_smjena, u
     subprocess.Popen(["open", filename])
 
 def main():
+    load_dotenv()
+    use_env = input("Želite li koristiti podatke iz .env fajla? (y/n): ").strip().lower()
+    if use_env == "y":
+        email = os.getenv("EMAIL", "")
+        password = os.getenv("PASSWORD", "")
+        if not email or not password:
+            print("Nisu pronađeni EMAIL i PASSWORD u .env fajlu. Unesite ručno.")
+            email = input("Unesi email: ").strip()
+            password = input("Unesi šifru: ").strip()
+    else:
+        email = input("Unesi email: ").strip()
+        password = input("Unesi šifru: ").strip()
     driver = init_driver()
     try:
-        login(driver)
+        login_with_credentials(driver, email, password)
 
         use_test_date = input("Da li želiš koristiti testni datum? (y/n): ").strip().lower()
         if use_test_date == "y":
@@ -233,6 +235,15 @@ def main():
         save_to_excel(prva_smjena_orders, druga_smjena_orders, ukupno_prva_smjena, ukupno_druga_smjena, ukupno_stavke)
     finally:
         driver.quit()
+
+def login_with_credentials(driver, email, password):
+    driver.get("https://korpa.ba/admin")
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "email")))
+    email_input = driver.find_element(By.NAME, "email")
+    password_input = driver.find_element(By.NAME, "password")
+    email_input.send_keys(email)
+    password_input.send_keys(password)
+    driver.find_element(By.XPATH, '//button[@type="submit"]').click()
 
 # --- Pokreni program ---
 if __name__ == "__main__":
